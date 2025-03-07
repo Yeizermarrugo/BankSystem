@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from "uuid";
 import UserModel from "../../domain/model/user.model";
 import { hashPassword } from "../../domain/utils/crypt";
+import { NotificationPort } from "../ports/notificationPort";
 
 /**
  * Get all users excluding sensitive fields
@@ -34,9 +35,10 @@ export const getUserById = async (id: string): Promise<UserModel | null> => {
 /**
  * Create a new user
  * @param data - User data
+ * @param notificationService  - Notification service
  * @returns Promise<User>
  */
-export const createUser = async (data: Partial<UserModel>): Promise<UserModel> => {
+export const createUser = async (data: Partial<UserModel>, notificationService: NotificationPort): Promise<UserModel> => {
 	if (!data.nombre || !data.apellido || !data.email || !data.password || !data.telefono || !data.dni || !data.address) {
 		throw new Error("Todos los campos son obligatorios");
 	}
@@ -51,6 +53,11 @@ export const createUser = async (data: Partial<UserModel>): Promise<UserModel> =
 		address: data.address,
 		isActive: true
 	});
+	try {
+		await notificationService.sendMessageToQueue(`🎉 ¡Bienvenido ${data.nombre} ${data.apellido}! Tu cuenta ha sido creada.`);
+	} catch (error) {
+		console.error("Error enviando notificación:", error);
+	}
 	return newUser;
 };
 
@@ -110,6 +117,6 @@ export const softDelete = async (id: string): Promise<boolean> => {
  */
 export const getUserByEmail = async (email: string): Promise<UserModel | null> => {
 	return await UserModel.findOne({
-		where: { email }
+		where: { email, isActive: true }
 	});
 };

@@ -3,12 +3,15 @@ import jwt from "jsonwebtoken";
 import { configs } from "../../config/config";
 import UserModel from "../../domain/model/user.model";
 import * as responses from "../../domain/utils/handleResponses";
+import { NotificationAdapter } from "../../infrastructure/adapters/notificationAdapter";
 import { createUser } from "../user/user.service";
 import { loginUser } from "./auth.service";
 
+const notificationService = new NotificationAdapter();
+
 export const login = (req: Request, res: Response): void => {
 	const { email, password } = req.body;
-	loginUser(email, password)
+	loginUser(email, password, notificationService)
 		.then((data) => {
 			if (!configs.api.secretOrKey) {
 				throw new Error("JWT secret key is missing");
@@ -66,7 +69,7 @@ export const signUp = async (req: Request, res: Response): Promise<void> => {
 		}
 
 		// Crear usuario
-		const newUser = await createUser(data);
+		const newUser = await createUser(data, notificationService);
 
 		const { password, ...userWithoutPassword } = newUser.toJSON();
 

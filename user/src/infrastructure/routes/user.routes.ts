@@ -1,6 +1,6 @@
 import { Router } from "express";
 
-import { deactivateMyUser, editMyuser, getMyUserById } from "../../application/user/user.controller";
+import { deactivateMyUser, editMyuser, getById, getMyUserById } from "../../application/user/user.controller";
 import passportJwt from "../middleware/auth.middleware";
 
 const router = Router();
@@ -9,6 +9,7 @@ const router = Router();
 
 //? /api/v1/users/me
 router.get("/me", passportJwt, getMyUserById);
+router.get("/:id", passportJwt, getById);
 router.patch("/me", passportJwt, editMyuser);
 router.delete("/me", passportJwt, deactivateMyUser);
 
