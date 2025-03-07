@@ -7,8 +7,9 @@ import { configs } from "../src/config/config";
 import initModels from "./domain/model/init.model";
 import { error, success } from "./domain/utils/handleResponses";
 //*archivos de rutas
-// const authRoute = require("./auth/auth.routes").router;
 import { router as account } from "./infrastructure/routes/account.routes";
+import { router as transaction } from "./infrastructure/routes/transaction.routes";
+
 // const userRoute = require("./users/user.routes").router;
 // const swaggerDoc = require("./swagger.json");
 
@@ -46,6 +47,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/v1/account", account);
+app.use("/v1/transaction", transaction);
 // app.use("/v1/doc", swaggerUi.serve, swaggerUi.setup(swaggerDoc));
 app.use("*", (req, res) => {
 	error({
