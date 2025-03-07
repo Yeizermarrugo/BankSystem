@@ -5,7 +5,6 @@ import passportJwt from "../middleware/auth.middleware";
 
 const router = Router();
 
-//* /api/v1/perfectskin/users/
 // router.get("/", [passportJwt, roleAdminMiddleware], getAll);
 
 //? /api/v1/users/me
