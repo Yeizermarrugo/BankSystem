@@ -9,7 +9,6 @@ declare module "express-serve-static-core" {
 
 export const verifyToken = (req: Request, res: Response, next: NextFunction) => {
 	const token = req.header("Authorization")?.split(" ")[1];
-	console.log("Token: ", token);
 
 	if (!token) {
 		return res.status(401).json({ message: "Unauthorized" });
@@ -17,7 +16,6 @@ export const verifyToken = (req: Request, res: Response, next: NextFunction) => 
 
 	try {
 		const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as { id: string };
-		console.log("Decoded: ", decoded);
 
 		req.userId = decoded.id; // Guardamos solo el id
 		next();
