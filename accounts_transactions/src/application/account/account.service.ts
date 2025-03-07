@@ -17,17 +17,31 @@ export const getAllAccounts = async (userId: string): Promise<AccountModel[]> =>
  * @returns Promise<AccountModel | null>
  */
 export const getAccountById = async (id: string, userId?: string): Promise<AccountModel | null> => {
-	const whereClause: any = { id }; // Se inicia solo con id
+	const whereClause: any = { id };
 
 	if (userId) {
-		whereClause.userId = userId; // Solo agregar userId si tiene valor
+		whereClause.userId = userId;
 	}
 
-	whereClause.isActive = true; // Se mantiene la validación de isActive
+	whereClause.isActive = true;
 	return await AccountModel.findOne({
 		where: whereClause,
 		attributes: { exclude: ["userId"] }
 	});
+};
+
+/**
+ * Get an account ID by account number
+ * @param accountNumber - Account number
+ * @returns Promise<string | null>
+ */
+export const getAccountIdByAccountNumber = async (accountNumber: string): Promise<string | null> => {
+	const account = await AccountModel.findOne({
+		where: { accountNumber, isActive: true },
+		attributes: ["id"]
+	});
+
+	return account ? account.id : null;
 };
 
 /**

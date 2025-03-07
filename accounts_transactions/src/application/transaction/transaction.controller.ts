@@ -1,6 +1,11 @@
 import { Request, Response } from "express";
 import * as responses from "../../domain/utils/handleResponses";
+import { NotificationAdapter } from "../../infrastructure/adapters/notificationAdapter";
+import { UserAdapter } from "../../infrastructure/adapters/usersAdapter";
 import { createTransactionByAccount, getTransactionByAccount } from "./transaction.service";
+
+const notificationService = new NotificationAdapter();
+const userService = new UserAdapter();
 
 export const getByAccount = async (req: Request, res: Response) => {
 	try {
@@ -40,10 +45,15 @@ export const createTransaction = async (req: Request, res: Response) => {
 		if (!req.userId) {
 			throw new Error("User not authenticated");
 		}
+		const token = req.header("Authorization")?.split(" ")[1];
+
+		if (!token) {
+			throw new Error("Token requerido");
+		}
 		const userId = req.userId;
 		const accountId = req.params.id;
 		const transaction = req.body;
-		const newTransaction = await createTransactionByAccount(accountId, transaction, userId);
+		const newTransaction = await createTransactionByAccount(accountId, transaction, userId, token, notificationService, userService);
 
 		responses.success({
 			status: 201,

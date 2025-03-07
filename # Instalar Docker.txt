@@ -1,0 +1,71 @@
+# Instalar Docker
+
+sudo apt update && sudo apt install docker.io -y
+sudo systemctl start docker
+sudo systemctl enable docker
+
+# Levantar Redis con Docker
+
+docker run -d --name redis-server -p 6379:6379 redis
+
+-d → Corre en segundo plano.
+--name redis-server → Nombre del contenedor.
+-p 6379:6379 → Expone el puerto 6379 (puerto de Redis).
+redis → Imagen oficial de Redis.
+
+## Para verificar que Redis está corriendo:
+
+docker ps
+
+
+# Instala Redis
+
+npm install ioredis
+
+------------------
+#Verifica que el servidor está corriendo
+ps aux | grep node
+#Matar todo los procesos de Node
+pkill -f node
+#Matar proceso por PID
+kill -9 <PID>
+------------------------
+
+# Instalar Redis
+sudo apt install redis-server
+# inicia Redis:
+sudo systemctl start redis
+# Verifica que está corriendo
+redis-cli ping
+
+# Detener redis
+sudo systemctl stop redis
+
+# Matar proceso
+sudo kill -9 <PID>
+
+
+-----------------------
+### Windows ver si hay un puerto corriendo 
+netstat -ano | findstr :3000
+### Matar ese proceso
+taskkill /PID <numero>
+
+
+
+
+
+-------------Redi-cli-----------------
+#Probar cola en Redi
+redis-cli -p <puerto>
+
+#Conocer todas las llaves almacenadas en Redis
+KEYS *
+
+#consultar la lista donde se están almacenando los mensajes
+LRANGE <tu_lista> 0 -1
+
+#Agregar mensaje manualmente
+redis-cli LPUSH notificationQueue "🔔 ¡Nueva notificación!"
+LRANGE notificationQueue 0 -1
+
