@@ -1,10 +1,14 @@
 import { Request, Response } from "express";
 import * as responses from "../../domain/utils/handleResponses";
-import { createAccount, deleteAccount, editAccount, getAccountById, getAllAccounts, restoreAccount } from "./account.service";
+import { createAccount, deleteAccount, editAccount, getAccountById, getAllAccounts } from "./account.service";
 
 export const getAll = async (req: Request, res: Response) => {
 	try {
-		const accounts = await getAllAccounts();
+		if (!req.userId) {
+			throw new Error("User not authenticated");
+		}
+		const userId = req.userId;
+		const accounts = await getAllAccounts(userId);
 		responses.success({
 			status: 200,
 			data: accounts,
@@ -23,21 +27,33 @@ export const getAll = async (req: Request, res: Response) => {
 
 export const getById = async (req: Request, res: Response) => {
 	try {
+		if (!req.userId) {
+			throw new Error("User not authenticated");
+		}
+		const userId = req.userId;
 		const id = req.params.id;
-		const includeInactive = req.query.includeInactive === "true";
-		const account = await getAccountById(id, includeInactive);
+		if (!userId) {
+			return responses.error({
+				status: 401,
+				data: null,
+				message: "Unauthorized: No user ID found",
+				res
+			});
+		}
+
+		const account = await getAccountById(id, userId);
 
 		if (account) {
 			responses.success({
 				status: 200,
 				data: [account],
-				message: `Getting account with id: ${id}`,
+				message: `Getting account with id: ${account.id}`,
 				res
 			});
 		} else {
 			responses.error({
 				status: 404,
-				message: `Account with ID: ${id} not found`,
+				message: `Account not found`,
 				res
 			});
 		}
@@ -86,8 +102,12 @@ export const create = async (req: Request, res: Response) => {
 
 export const edit = async (req: Request, res: Response) => {
 	try {
+		if (!req.userId) {
+			throw new Error("User not authenticated");
+		}
 		const id = req.params.id;
-		const updatedAccount = await editAccount(id, req.body);
+		const userId = req.userId;
+		const updatedAccount = await editAccount(id, userId, req.body);
 
 		if (updatedAccount) {
 			responses.success({
@@ -115,8 +135,12 @@ export const edit = async (req: Request, res: Response) => {
 
 export const remove = async (req: Request, res: Response) => {
 	try {
+		if (!req.userId) {
+			throw new Error("User not authenticated");
+		}
+		const userId = req.userId;
 		const id = req.params.id;
-		const deleted = await deleteAccount(id);
+		const deleted = await deleteAccount(id, userId);
 
 		if (deleted) {
 			responses.success({
@@ -142,31 +166,31 @@ export const remove = async (req: Request, res: Response) => {
 	}
 };
 
-export const restore = async (req: Request, res: Response) => {
-	try {
-		const id = req.params.id;
-		const restored = await restoreAccount(id);
+// export const restore = async (req: Request, res: Response) => {
+// 	try {
+// 		const id = req.params.id;
+// 		const restored = await restoreAccount(id);
 
-		if (restored) {
-			responses.success({
-				status: 200,
-				message: `Account with id: ${id} restored successfully`,
-				res,
-				data: [restored]
-			});
-		} else {
-			responses.error({
-				status: 404,
-				message: `Account with ID: ${id} not found`,
-				res
-			});
-		}
-	} catch (err) {
-		responses.error({
-			status: 400,
-			data: err,
-			message: "Error restoring account",
-			res
-		});
-	}
-};
+// 		if (restored) {
+// 			responses.success({
+// 				status: 200,
+// 				message: `Account with id: ${id} restored successfully`,
+// 				res,
+// 				data: [restored]
+// 			});
+// 		} else {
+// 			responses.error({
+// 				status: 404,
+// 				message: `Account with ID: ${id} not found`,
+// 				res
+// 			});
+// 		}
+// 	} catch (err) {
+// 		responses.error({
+// 			status: 400,
+// 			data: err,
+// 			message: "Error restoring account",
+// 			res
+// 		});
+// 	}
+// };
