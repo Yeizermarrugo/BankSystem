@@ -4,13 +4,13 @@ interface SuccessResponse<T> {
 	status: number;
 	data: T | T[] | null;
 	message: string;
-	res: Response;
+	res: Response | any;
 }
 
 interface ErrorResponse {
 	status: number;
 	message: string;
-	res: Response;
+	res: Response | any;
 	data?: any;
 	fields?: Record<string, string>;
 }
