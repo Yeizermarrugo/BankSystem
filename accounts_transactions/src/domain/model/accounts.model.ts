@@ -8,6 +8,7 @@ interface AccountAttributes {
 	saldo: number;
 	moneda: string;
 	isActive: boolean;
+	accountNumber: string;
 	createdAt: Date;
 	updatedAt: Date;
 }
@@ -18,6 +19,7 @@ class Account extends Model<AccountAttributes, AccountCreationAttributes> implem
 	public id!: string;
 	public userId!: string;
 	public nombre!: string;
+	public accountNumber!: string;
 	public saldo!: number;
 	public moneda!: string;
 	public isActive!: boolean;
@@ -34,11 +36,17 @@ Account.init(
 		},
 		userId: {
 			type: DataTypes.UUID,
-			allowNull: false
+			allowNull: false,
+			field: "userId"
 		},
 		nombre: {
 			type: DataTypes.STRING(100),
 			allowNull: false
+		},
+		accountNumber: {
+			type: DataTypes.STRING(10),
+			allowNull: false,
+			unique: true
 		},
 		saldo: {
 			type: DataTypes.DECIMAL(15, 2),
