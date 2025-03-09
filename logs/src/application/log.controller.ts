@@ -44,7 +44,7 @@ export const getByService = async (req: Request, res: Response) => {
 };
 
 export const getByAction = async (req: Request, res: Response) => {
-	const action = req.params.action;
+	const { action } = req.params;
 	getLogsByAction(action)
 		.then((data) => {
 			responses.success({
@@ -67,13 +67,12 @@ export const getByAction = async (req: Request, res: Response) => {
 getLogsByDateRange;
 
 export const getByDateRange = async (req: Request, res: Response) => {
-	const startDate = req.params.startDate;
-	const endDate = req.params.endDate;
+	const { startDate, endDate } = req.params;
 	getLogsByDateRange(startDate, endDate)
 		.then((data) => {
 			responses.success({
 				status: 200,
-				data: [data],
+				data: data,
 				message: `Getting logs between ${startDate} and ${endDate}`,
 				res
 			});
@@ -93,7 +92,7 @@ export const getRecent = async (req: Request, res: Response) => {
 		.then((data) => {
 			responses.success({
 				status: 200,
-				data: [data],
+				data: data,
 				message: "Getting recent logs",
 				res
 			});
@@ -107,7 +106,6 @@ export const getRecent = async (req: Request, res: Response) => {
 			});
 		});
 };
-
 
 export const create = async (req: Request, res: Response) => {
 	try {
