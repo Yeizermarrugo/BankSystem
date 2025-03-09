@@ -123,7 +123,7 @@ export const editAccount = async (id: string, userId: string, data: Partial<Acco
 	try {
 		const oldData = { ...account.dataValues };
 		console.log("old data", oldData);
-		const { userId, accountNumber, saldo, moneda, ...accountModified } = data;
+		const { accountNumber, saldo, moneda, ...accountModified } = data;
 
 		await AccountModel.update(accountModified, { where: { id, userId } });
 		const updatedAccount = await AccountModel.findByPk(id);
