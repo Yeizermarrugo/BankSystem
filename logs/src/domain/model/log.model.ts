@@ -8,8 +8,8 @@ class Logs extends Model {
 	public action!: string;
 	public status!: string;
 	public message!: string;
-	public oldData!: object;
-	public newData!: object;
+	public oldData!: string;
+	public newData!: string;
 }
 
 Logs.init(

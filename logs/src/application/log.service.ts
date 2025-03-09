@@ -30,7 +30,7 @@ export const getLogsByService = async (service: string): Promise<Logs[]> => {
  */
 export const getLogsByAction = async (action: string): Promise<Logs[]> => {
 	const data = await Logs.findAll({
-		where: { action }
+		where: { action: { [Op.like]: action } }
 	});
 	return data;
 };
@@ -50,8 +50,8 @@ export const getLogsByDateRange = async (startDate: string, endDate: string): Pr
 		}
 
 		// Convertir a objeto Date y validar
-		const start = new Date(startDate);
-		const end = new Date(endDate);
+		const start = new Date(`${startDate}T00:00:00.000-05:00`);
+		const end = new Date(`${endDate}T23:59:59.999-05:00`);
 		if (isNaN(start.getTime()) || isNaN(end.getTime())) {
 			throw new Error("Invalid date format. Please provide dates in ISO format (YYYY-MM-DD).");
 		}
@@ -110,8 +110,8 @@ export const createLog = async (data: Partial<Logs>) => {
 		action: data.action,
 		status: data.status,
 		message: data.message,
-		oldData: data.oldData ? JSON.stringify(data.oldData) : null,
-		newData: data.newData ? JSON.stringify(data.newData) : null
+		oldData: typeof data.oldData === "string" ? JSON.parse(data.oldData) : data.oldData,
+		newData: typeof data.newData === "string" ? JSON.parse(data.newData) : data.newData
 	});
 
 	return newLog;
