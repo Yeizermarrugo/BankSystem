@@ -1,7 +1,11 @@
 import { Request, Response } from "express";
 import { hashPassword } from "../../domain/utils/crypt";
 import * as responses from "../../domain/utils/handleResponses";
+import { LogsAdapter } from "../../infrastructure/adapters/logsAdapter";
+import { NotificationAdapter } from "../../infrastructure/adapters/notificationAdapter";
 import { deleteUser, editUser, getAllUsers, getUserById, softDelete } from "./user.service";
+const notificationService = new NotificationAdapter();
+const logsService = new LogsAdapter();
 
 export const getAll = (req: Request, res: Response) => {
 	getAllUsers()
@@ -70,7 +74,7 @@ export const edit = (req: Request, res: Response) => {
 			}
 		});
 	} else {
-		const response = editUser(id, data);
+		const response = editUser(id, data, logsService, notificationService);
 		return res.status(200).json({
 			message: "User edited succesfully",
 			user: data
@@ -186,7 +190,7 @@ export const editMyuser = async (req: Request, res: Response): Promise<void> => 
 		if (dni) data.dni = dni;
 		if (address) data.address = address;
 
-		await editUser(userId, data);
+		await editUser(userId, data, logsService, notificationService);
 
 		res.status(200).json({
 			message: "Your user has been updated successfully!",

@@ -14,10 +14,11 @@ import { router as transaction } from "./infrastructure/routes/transaction.route
 // const swaggerDoc = require("./swagger.json");
 
 //* Conexion BD
-import createTriggers from "./domain/model/trigger";
 import db from "./domain/utils/database";
+import { LogsAdapter } from "./infrastructure/adapters/logsAdapter";
 
 //*configuracion inicial
+const logsService = new LogsAdapter();
 const app = express();
 app.use(express.json());
 app.use(helmet());
@@ -25,16 +26,18 @@ app.use(compression());
 app.use(cors());
 
 db.authenticate()
-	.then(async () => {
-		console.log("Database Authenticated");
-		await createTriggers();
-	})
-	.catch((err) => console.log(err));
+	.then(() => console.log("Database Authenticated"))
+	.catch(async (err) => {
+		await logsService.sendLog("database", "system", "authenticate", "error", `Database authentication failed: ${err.message}`);
+		console.log(err);
+	});
 
 db.sync()
 	.then(() => console.log("Database synced"))
-	.catch((err) => console.log(err));
-
+	.catch(async (err) => {
+		await logsService.sendLog("database", "system", "synced", "error", `Database sync failed: ${err.message}`);
+		console.log(err);
+	});
 initModels();
 
 app.get("/", (req, res) => {

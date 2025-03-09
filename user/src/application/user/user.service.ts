@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from "uuid";
 import UserModel from "../../domain/model/user.model";
 import { hashPassword } from "../../domain/utils/crypt";
+import { LogsPort } from "../ports/logsPort";
 import { NotificationPort } from "../ports/notificationPort";
 
 /**
@@ -38,7 +39,7 @@ export const getUserById = async (id: string): Promise<UserModel | null> => {
  * @param notificationService  - Notification service
  * @returns Promise<User>
  */
-export const createUser = async (data: Partial<UserModel>, notificationService: NotificationPort): Promise<UserModel> => {
+export const createUser = async (data: Partial<UserModel>, notificationService: NotificationPort, logsService: LogsPort): Promise<UserModel> => {
 	if (!data.nombre || !data.apellido || !data.email || !data.password || !data.telefono || !data.dni || !data.address) {
 		throw new Error("Todos los campos son obligatorios");
 	}
@@ -55,7 +56,9 @@ export const createUser = async (data: Partial<UserModel>, notificationService: 
 	});
 	try {
 		await notificationService.sendMessageToQueue(`🎉 ¡Bienvenido ${data.nombre} ${data.apellido}! Tu cuenta ha sido creada.`);
+		await logsService.sendLog("users", newUser.id, "create", "success", `User created successfully ${newUser.id}`);
 	} catch (error) {
+		await logsService.sendLog("users", newUser.id, "create", "error", error);
 		console.error("Error enviando notificación:", error);
 	}
 	return newUser;
@@ -67,23 +70,30 @@ export const createUser = async (data: Partial<UserModel>, notificationService: 
  * @param data - Updated user data
  * @returns Promise<UserModel | null> - Updated user or null if not found
  */
-export const editUser = async (userId: string, data: Partial<UserModel>): Promise<UserModel | null> => {
+export const editUser = async (userId: string, data: Partial<UserModel>, logsService: LogsPort, notificationService: NotificationPort): Promise<UserModel | null> => {
 	try {
 		// Verificar si el usuario existe
-		const user = await getUserById(userId);
-		console.log("user: ", user);
-		if (!user) {
+		const oldUser = await getUserById(userId);
+		if (!oldUser) {
+			await logsService.sendLog("users", userId, "update", "error", "User not found");
 			throw new Error("User not found");
 		}
 
 		// Eliminar la contraseña y ID del objeto a actualizar (seguridad)
 		const { id, ...restOfProperties } = data;
 
-		// Actualizar usuario
 		await UserModel.update(restOfProperties, { where: { id: userId } });
+		const newUser = await UserModel.findByPk(userId);
+		const { password, ...oldData } = oldUser.dataValues;
+		const { password: _, ...newData } = newUser?.dataValues || {};
+		// Guardar Logs
+		await logsService.sendLog("users", userId, "update", "success", "User updated successfully", oldData, newData);
 
-		// Retornar el usuario actualizado
-		return await UserModel.findByPk(userId);
+		// Enviar notificación al usuario actualizado
+		await notificationService.sendMessageToQueue(`🔄 Tu perfil ha sido actualizado correctamente ${newUser?.nombre} ${newUser?.apellido}`);
+
+		// Retornar el usuario actualizado sin password
+		return newUser;
 	} catch (error) {
 		console.error("Error updating user:", error);
 		throw new Error("Failed to update user");

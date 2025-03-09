@@ -3,11 +3,13 @@ import jwt from "jsonwebtoken";
 import { configs } from "../../config/config";
 import UserModel from "../../domain/model/user.model";
 import * as responses from "../../domain/utils/handleResponses";
+import { LogsAdapter } from "../../infrastructure/adapters/logsAdapter";
 import { NotificationAdapter } from "../../infrastructure/adapters/notificationAdapter";
 import { createUser } from "../user/user.service";
 import { loginUser } from "./auth.service";
 
 const notificationService = new NotificationAdapter();
+const logsService = new LogsAdapter();
 
 export const login = (req: Request, res: Response): void => {
 	const { email, password } = req.body;
@@ -69,7 +71,7 @@ export const signUp = async (req: Request, res: Response): Promise<void> => {
 		}
 
 		// Crear usuario
-		const newUser = await createUser(data, notificationService);
+		const newUser = await createUser(data, notificationService, logsService);
 
 		const { password, ...userWithoutPassword } = newUser.toJSON();
 
@@ -91,7 +93,8 @@ export const signUp = async (req: Request, res: Response): Promise<void> => {
 				email: "example@example.com",
 				password: "String",
 				telefono: "+52 1234 123 123",
-				dni: "123456789"
+				dni: "123456789",
+				address: "String"
 			}
 		});
 	}

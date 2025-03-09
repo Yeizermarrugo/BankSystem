@@ -1,6 +1,11 @@
 import { Request, Response } from "express";
 import * as responses from "../../domain/utils/handleResponses";
+import { LogsAdapter } from "../../infrastructure/adapters/logsAdapter";
+import { NotificationAdapter } from "../../infrastructure/adapters/notificationAdapter";
 import { createAccount, deleteAccount, editAccount, getAccountById, getAllAccounts } from "./account.service";
+
+const logsService = new LogsAdapter();
+const notificationService = new NotificationAdapter();
 
 export const getAll = async (req: Request, res: Response) => {
 	try {
@@ -83,7 +88,7 @@ export const create = async (req: Request, res: Response) => {
 		}
 
 		const data = req.body;
-		const account = await createAccount(data, userId);
+		const account = await createAccount(data, userId, logsService, notificationService);
 		responses.success({
 			status: 201,
 			data: [account],
@@ -107,7 +112,7 @@ export const edit = async (req: Request, res: Response) => {
 		}
 		const id = req.params.id;
 		const userId = req.userId;
-		const updatedAccount = await editAccount(id, userId, req.body);
+		const updatedAccount = await editAccount(id, userId, req.body, logsService, notificationService);
 
 		if (updatedAccount) {
 			responses.success({
@@ -140,7 +145,7 @@ export const remove = async (req: Request, res: Response) => {
 		}
 		const userId = req.userId;
 		const id = req.params.id;
-		const deleted = await deleteAccount(id, userId);
+		const deleted = await deleteAccount(id, userId, logsService, notificationService);
 
 		if (deleted) {
 			responses.success({

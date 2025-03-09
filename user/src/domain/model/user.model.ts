@@ -17,7 +17,7 @@ interface UserAttributes {
 }
 
 // Permitir atributos opcionales para `create()`
-interface UserCreationAttributes extends Optional<UserAttributes, "id" | "createdAt" | "updatedAt"> {}
+interface UserCreationAttributes extends Optional<UserAttributes, "id" | "password" | "createdAt" | "updatedAt"> {}
 
 // Definir el modelo extendiendo de `Model`
 class UserModel extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {

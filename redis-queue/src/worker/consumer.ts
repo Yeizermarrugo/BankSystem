@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 import redis from "../config/redisConfig";
-import Notification from "../domain/model/notification";
+import Notification from "../domain/model/notification.model";
 
 export const processQueue = async () => {
 	while (true) {
@@ -30,7 +30,7 @@ export const processQueue = async () => {
 			}
 		} else {
 			console.log("📭 No hay mensajes en la cola, esperando...");
-			await new Promise((resolve) => setTimeout(resolve, 20000));
+			await new Promise((resolve) => setTimeout(resolve, 60000));
 		}
 	}
 };

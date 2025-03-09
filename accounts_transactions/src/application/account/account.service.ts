@@ -1,5 +1,7 @@
 import { v4 as uuidv4 } from "uuid";
 import AccountModel from "../../domain/model/accounts.model";
+import { LogsPort } from "../ports/logsPort";
+import { NotificationPort } from "../ports/notificationPort";
 
 /**
  * Get all accounts
@@ -48,16 +50,28 @@ export const getAccountIdByAccountNumber = async (accountNumber: string): Promis
  * Genera un número de cuenta de 10 dígitos aleatorio.
  * @returns string
  */
-const generateAccountNumber = async (): Promise<string> => {
+const generateAccountNumber = async (logsService: LogsPort): Promise<string> => {
 	let accountNumber;
 	let exists;
+	let attempts = 0;
 
-	do {
-		accountNumber = Math.floor(1000000000 + Math.random() * 9000000000).toString();
-		exists = await AccountModel.findOne({ where: { accountNumber } });
-	} while (exists);
+	try {
+		do {
+			accountNumber = Math.floor(1000000000 + Math.random() * 9000000000).toString();
+			exists = await AccountModel.findOne({ where: { accountNumber } });
 
-	return accountNumber;
+			if (exists) {
+				await logsService.sendLog("accounts", "system", "generate_account_number", "warning", `Collision detected: ${accountNumber} already exists (Attempt #${attempts})`);
+			}
+		} while (exists);
+
+		await logsService.sendLog("accounts", "system", "generate_account_number", "success", `Account number generated successfully: ${accountNumber} (Attempts: ${attempts})`);
+
+		return accountNumber;
+	} catch (err: any) {
+		await logsService.sendLog("accounts", "system", "generate_account_number", "error", `Failed to generate account number: ${err.message}`);
+		throw new Error("Error generating account number");
+	}
 };
 
 /**
@@ -66,23 +80,33 @@ const generateAccountNumber = async (): Promise<string> => {
  * @param userId - User ID
  * @returns Promise<AccountModel>
  */
-export const createAccount = async (data: Partial<AccountModel>, userId: string): Promise<AccountModel> => {
+export const createAccount = async (data: Partial<AccountModel>, userId: string, logsService: LogsPort, notificationService: NotificationPort): Promise<AccountModel> => {
 	if (!data.nombre) {
 		throw new Error("Todos los campos son obligatorios");
 	}
 
-	const accountNumber = await generateAccountNumber();
+	try {
+		const accountNumber = await generateAccountNumber(logsService);
 
-	const newAccount = await AccountModel.create({
-		id: uuidv4(),
-		userId: userId,
-		nombre: data.nombre,
-		accountNumber,
-		saldo: data.saldo,
-		moneda: data.moneda || "USD",
-		isActive: true
-	});
-	return newAccount;
+		const newAccount = await AccountModel.create({
+			id: uuidv4(),
+			userId: userId,
+			nombre: data.nombre,
+			accountNumber,
+			saldo: data.saldo,
+			moneda: data.moneda || "USD",
+			isActive: true
+		});
+
+		await logsService.sendLog("accounts", newAccount.id, "create", "success", `Account created successfully for user ${userId} with account number ${accountNumber}`);
+		await notificationService.sendMessageToQueue(`🎉 ¡Cuenta creada con éxito! Tu número de cuenta es: ${accountNumber}.`);
+		return newAccount;
+	} catch (err: any) {
+		await logsService.sendLog("accounts", userId, "create", "error", `Failed to create account: ${err.message}`);
+
+		console.error("Error creating account:", err);
+		throw new Error("Failed to create account");
+	}
 };
 
 /**
@@ -91,15 +115,26 @@ export const createAccount = async (data: Partial<AccountModel>, userId: string)
  * @param data - Updated account data
  * @returns Promise<AccountModel | null>
  */
-export const editAccount = async (id: string, userId: string, data: Partial<AccountModel>): Promise<AccountModel | null> => {
+export const editAccount = async (id: string, userId: string, data: Partial<AccountModel>, logsService: LogsPort, notificationService: NotificationPort): Promise<AccountModel | null> => {
 	const account = await getAccountById(id, userId);
 	if (!account) {
 		throw new Error("Account not found");
 	}
-	const { saldo, moneda, ...accountModified } = data;
+	try {
+		const oldData = { ...account.dataValues };
+		const { userId, accountNumber, saldo, moneda, ...accountModified } = data;
 
-	await AccountModel.update(accountModified, { where: { id, userId } });
-	return await AccountModel.findByPk(id);
+		await AccountModel.update(accountModified, { where: { id, userId } });
+		const updatedAccount = await AccountModel.findByPk(id);
+		const newData = { ...updatedAccount?.dataValues };
+		await logsService.sendLog("accounts", id, "edit", "success", `Account updated successfully for user ${userId}`, oldData, newData);
+		await notificationService.sendMessageToQueue(`🎉 ¡Cuenta actualizada con éxito!`);
+		return updatedAccount;
+	} catch (err: any) {
+		await logsService.sendLog("accounts", id, "update", "error", `Failed to update account: ${err.message}`);
+		console.error("Error updating account:", err);
+		throw new Error("Failed to update account");
+	}
 };
 
 /**
@@ -107,14 +142,31 @@ export const editAccount = async (id: string, userId: string, data: Partial<Acco
  * @param id - Account ID
  * @returns Promise<boolean> - Returns true if the account was marked as inactive
  */
-export const deleteAccount = async (id: string, userId: string): Promise<boolean> => {
+export const deleteAccount = async (id: string, userId: string, logsService: LogsPort, notificationService: NotificationPort): Promise<boolean> => {
 	const account = await getAccountById(id, userId);
 	if (!account) {
 		throw new Error("Account not found");
 	}
+	try {
+		// Guardar estado anterior para logs
+		const oldData = { ...account.dataValues };
 
-	await AccountModel.update({ isActive: false }, { where: { id } });
-	return true;
+		// Desactivar cuenta (soft delete)
+		await AccountModel.update({ isActive: false }, { where: { id } });
+
+		// 🔹 Log de éxito
+		await logsService.sendLog("accounts", id, "delete", "success", `Account deactivated: ${JSON.stringify(oldData)}`);
+
+		// 🔹 Notificación al usuario
+		await notificationService.sendMessageToQueue(`⚠️ Tu cuenta (${id}) ha sido desactivada. Si necesitas reactivarla, contacta soporte.`);
+
+		return true;
+	} catch (error: any) {
+		// 🔹 Log de error
+		await logsService.sendLog("accounts", id, "delete", "error", `Failed to delete account: ${error.message}`);
+		console.error("Error deleting account:", error);
+		throw new Error("Failed to delete account");
+	}
 };
 
 // /**

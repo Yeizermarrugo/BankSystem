@@ -1,8 +1,11 @@
 import { Request, Response } from "express";
 import * as responses from "../../domain/utils/handleResponses";
+import { LogsAdapter } from "../../infrastructure/adapters/logsAdapter";
 import { NotificationAdapter } from "../../infrastructure/adapters/notificationAdapter";
 import { UserAdapter } from "../../infrastructure/adapters/usersAdapter";
 import { createTransactionByAccount, getTransactionByAccount } from "./transaction.service";
+
+const logsService = new LogsAdapter();
 
 const notificationService = new NotificationAdapter();
 const userService = new UserAdapter();
@@ -53,7 +56,7 @@ export const createTransaction = async (req: Request, res: Response) => {
 		const userId = req.userId;
 		const accountId = req.params.id;
 		const transaction = req.body;
-		const newTransaction = await createTransactionByAccount(accountId, transaction, userId, token, notificationService, userService);
+		const newTransaction = await createTransactionByAccount(accountId, transaction, userId, token, notificationService, userService, logsService);
 
 		responses.success({
 			status: 201,
