@@ -8,7 +8,7 @@ router.get("/", logController.getAll);
 router.get("/:service/search", logController.getByService);
 
 //? /v1/logs/:${action}/search
-router.get("/:action/search", logController.getByAction);
+router.get("/action/:action/search", logController.getByAction);
 
 //? /v1/logs/:${startDate}/:${endDate}/search
 router.get("/:startDate/:endDate/search", logController.getByDateRange);
